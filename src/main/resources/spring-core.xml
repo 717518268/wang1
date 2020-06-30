@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+ <!-- ========================= TRANSACTION DEFINITIONS ========================= -->
+    <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="location" value="classpath:jdbc.properties" />
+    </bean>
+
+
+    <!-- 配置数据源 使用的是Druid数据源 -->
+   <!--  <bean name="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        初始化连接大小
+        <property name="initialSize" value="3"/>
+        连接池最大使用连接数量
+        <property name="maxActive" value="20"/>
+        连接池最小空闲
+        <property name="minIdle" value="10"/>
+        获取连接最大等待时间
+        <property name="maxWait" value="60000"/>
+         
+    </bean> -->
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"  destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}"/>
+		<property name="url" value="${jdbc.url}"/>
+		<property name="username" value="${jdbc.username}"/>
+		<property name="password" value="${jdbc.password}"/>
+		<property name="maxTotal" value="${jdbc.maxTotal}"/>
+		<property name="maxIdle" value="${jdbc.maxIdle}"/>
+		<property name="initialSize" value="${jdbc.initialSize}"/>
+		</bean>
+
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource">
+            <ref bean="dataSource"/>
+        </property>
+    </bean>
+
+     <tx:annotation-driven transaction-manager="transactionManager"
+                          proxy-target-class="true"/>
+
+  <!-- 因为要考虑mybatis的二级缓存所以先保留mybatis.xml文件 -->
+		<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="configLocation" value="classpath:mybatis-core.xml"/>
+		<!-- 引入插件 -->
+		<property name="plugins">
+			<array>
+			<!-- mybatis插件 -->
+			<bean class="com.github.pagehelper.PageInterceptor">
+				<property name="properties">
+				<!--  
+				-->
+					<value>
+					helperDialect=mysql
+					</value>
+				</property>
+			</bean>
+			</array>
+		</property>
+		</bean>
+		
+		<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+			<property name="basePackage" value="com.wang.dao"/>
+		</bean>
+		<context:component-scan base-package="com.wang.service"/>
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="create*"  propagation="REQUIRED"/>
+            <tx:method name="add*" propagation="REQUIRED"/>
+            <tx:method name="delete*" propagation="REQUIRED"/>
+            <tx:method name="update*" propagation="REQUIRED"/>
+            <tx:method name="do*" propagation="REQUIRED"/>
+            <tx:method name="process*" propagation="REQUIRED"/>
+			
+            <tx:method name="get*" read-only="true"/>
+            <tx:method name="count*" read-only="true"/>
+            <tx:method name="find*" read-only="true"/>
+            <tx:method name="list*" read-only="true"/>
+            <tx:method name="noTransaction*" propagation="NOT_SUPPORTED" />
+            <tx:method name="*"  propagation="REQUIRED"/>
+        </tx:attributes>
+    </tx:advice>
+    <aop:config>
+        <aop:pointcut id="txPointCut"
+                      expression="execution(* com.wang.service.*.*(..))"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="txPointCut"/>
+    </aop:config>
+
+</beans>
