@@ -34,7 +34,7 @@ public class EmployeeController {
 	@RequestMapping(value="/insert",method=RequestMethod.GET)
 	@ResponseBody
 	public int inser() throws EmployeeException, EmployeeExceptionMessage{
-		String name="张三风";
+		String name="李云龙";
 		int age=18;
 		String sex="男";
 		String address="北京";
@@ -74,9 +74,10 @@ public class EmployeeController {
 		if(employee!=null){
 			return employee;
 		}else{
-			 
+			 //可以添加备用方案
+			//return new Employee();
 			throw new EmployeeException("没有此id对应的数据");
-			
+			//选择抛异常的方式
 		}
 		 
 	}
@@ -93,7 +94,6 @@ public class EmployeeController {
 			String sex="男";
 			String address="北京";
 			boolean confag=EmployeeUtilsMessage.AdveMeaageValue(name, age, sex, address);//进行校验
-			 
 			if(confag){
 				employee.setName(name);
 				employee.setAge(age);
@@ -110,21 +110,26 @@ public class EmployeeController {
 			throw new EmployeeException("没有此id对应的数据");
 		}
 		    
-	 
+		//备用方案。new Employee();
 		return employee;
 		
 		
 	}
 	
-	
+	/**
+	 * 正确回显是1
+	 * @return 1
+	 * @throws EmployeeException
+	 */
 	@RequestMapping(value="/delete",method=RequestMethod.GET)
 	@ResponseBody
 	public int deleteEmployee() throws EmployeeException{
-		int id=2;
+		int id=3;
 		int indexdelete=employeeMapperService.deleteByPrimaryKey(id);
 		if(indexdelete>0){
 			return SUCCESS;
 		}else{
+			//选择抛异常方式
 			throw new EmployeeException("没有此id对应的数据=====删除失败 ===》remove error");
 		}
 		 
